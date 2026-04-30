@@ -1,0 +1,14 @@
+[package]
+name = "ct-repair-gaps"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "ct-repair-gaps"
+path = "src/main.rs"
+
+[dependencies]
+claude-trader-data.workspace = true
+claude-trader-models.workspace = true
+chrono.workspace = true
+crc32fast.workspace = true

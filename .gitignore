@@ -1,0 +1,32 @@
+# Rust build artifacts
+/target/
+**/target/
+
+# Generated evaluation artifacts
+/outputs/
+/validation_result.json
+
+# Local agent/editor state
+/.claude/
+/.codex
+
+# Local live-trading secrets/state
+.env
+.env.*
+*.pem
+*.key
+live_config*.json
+live_state*.json
+live_cooldown*.json
+.claude_trader/
+
+# OS/browser metadata
+*:Zone.Identifier
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~

@@ -1,0 +1,15 @@
+[package]
+name = "claude-trader-research-runtime"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+claude-trader-models.workspace = true
+claude-trader-resolver.workspace = true
+claude-trader-indicators.workspace = true
+claude-trader-data.workspace = true
+claude-trader-evaluator.workspace = true
+claude-trader-btc-structure.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true

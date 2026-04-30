@@ -1,0 +1,85 @@
+strategy_name	strategy_description	strategy_score_dev	strategy_score_eval	performance_description
+opus46_max_16apr26_1_v1	opus46_max_16apr26_1_v1 (development)	1.84	-	PNL +35.45% | PF 1.21 | Sort 1.11 | MDD 24.39% | 161 trades | eligible
+opus46_max_16apr26_1_v2	opus46_max_16apr26_1_v2 (development)	0.35	-	PNL +8.66% | PF 1.05 | Sort 0.19 | MDD 25.69% | 218 trades | eligible
+opus46_max_16apr26_1_v3	opus46_max_16apr26_1_v3 (development)	5.40	-	PNL +41.07% | PF 1.63 | Sort 3.59 | MDD 12.25% | 84 trades | eligible
+opus46_max_16apr26_1_v4	opus46_max_16apr26_1_v4 (development)	0.00	-	PNL -215.46% | PF 0.71 | Sort -2.23 | MDD 227.70% | 591 trades | not eligible
+opus46_max_16apr26_1_v5	opus46_max_16apr26_1_v5 (development)	0.00	-	PNL -37.04% | PF 0.90 | Sort -0.90 | MDD 72.35% | 382 trades | not eligible
+opus46_max_16apr26_1_v6	opus46_max_16apr26_1_v6 (development)	1.28	-	PNL +21.29% | PF 1.22 | Sort 1.11 | MDD 19.77% | 120 trades | eligible
+opus46_max_16apr26_1_v7	opus46_max_16apr26_1_v7 (development)	0.00	-	PNL -50.58% | PF 0.93 | Sort -0.84 | MDD 80.70% | 830 trades | not eligible
+opus46_max_16apr26_1_v8	opus46_max_16apr26_1_v8 (development)	0.84	-	PNL +20.43% | PF 1.14 | Sort 0.99 | MDD 26.01% | 160 trades | eligible
+opus46_max_16apr26_1_v9	opus46_max_16apr26_1_v9 (development)	0.00	-	PNL -6.87% | PF 0.98 | Sort -0.30 | MDD 38.69% | 329 trades | not eligible
+opus46_max_16apr26_1_v10	opus46_max_16apr26_1_v10 (development)	2.14	-	PNL +29.52% | PF 1.26 | Sort 1.87 | MDD 16.78% | 131 trades | eligible
+opus46_max_16apr26_1_v10b	opus46_max_16apr26_1_v10b (development)	6.17	-	PNL +39.74% | PF 1.68 | Sort 3.71 | MDD 10.01% | 79 trades | eligible
+opus46_max_16apr26_1_v10c	opus46_max_16apr26_1_v10c (development)	5.65	-	PNL +39.74% | PF 1.68 | Sort 3.71 | MDD 10.94% | 79 trades | eligible
+opus46_max_16apr26_1_v10b	opus46_max_16apr26_1_v10b (evaluation)	-	1.37	PNL +20.35% | PF 1.52 | Sort 2.80 | MDD 12.03% | 44 trades | eligible
+opus46_max_16apr26_1_v11	opus46_max_16apr26_1_v11 (development)	23.88	-	PNL +85.96% | PF 2.10 | Sort 6.78 | MDD 9.28% | 111 trades | eligible
+opus46_max_16apr26_1_v11	opus46_max_16apr26_1_v11 (evaluation)	-	3.52	PNL +27.88% | PF 1.43 | Sort 4.26 | MDD 13.15% | 70 trades | eligible
+opus46_max_16apr26_1_v12	opus46_max_16apr26_1_v12 (development)	22.14	-	PNL +102.17% | PF 2.02 | Sort 6.62 | MDD 11.97% | 138 trades | eligible
+opus46_max_16apr26_1_v12	opus46_max_16apr26_1_v12 (evaluation)	-	3.69	PNL +30.01% | PF 1.39 | Sort 4.52 | MDD 15.30% | 81 trades | eligible
+opus46_max_16apr26_1_v13	opus46_max_16apr26_1_v13 (development)	20.73	-	PNL +105.57% | PF 2.01 | Sort 5.79 | MDD 12.75% | 138 trades | eligible
+opus46_max_16apr26_1_v13	opus46_max_16apr26_1_v13 (evaluation)	-	0.46	PNL +10.26% | PF 1.11 | Sort 0.90 | MDD 20.58% | 81 trades | eligible
+opus46_max_16apr26_1_v14	opus46_max_16apr26_1_v14 (development)	9.21	-	PNL +88.83% | PF 1.61 | Sort 4.74 | MDD 19.01% | 171 trades | eligible
+opus46_max_16apr26_1_v14	opus46_max_16apr26_1_v14 (evaluation)	-	0.54	PNL +13.16% | PF 1.12 | Sort 1.46 | MDD 26.37% | 106 trades | eligible
+opus46_max_16apr26_1_v15	opus46_max_16apr26_1_v15 (development)	1.86	-	PNL +55.81% | PF 2.19 | Sort 2.46 | MDD 14.62% | 33 trades | not eligible
+opus46_max_16apr26_1_v16	opus46_max_16apr26_1_v16 (development)	30.88	-	PNL +99.69% | PF 2.38 | Sort 8.83 | MDD 9.53% | 105 trades | eligible
+opus46_max_16apr26_1_v16	opus46_max_16apr26_1_v16 (evaluation)	-	9.23	PNL +38.55% | PF 1.86 | Sort 9.34 | MDD 8.34% | 57 trades | eligible
+opus46_max_16apr26_1_v16	opus46_max_16apr26_1_v16 (evaluation)	-	9.23	PNL +38.55% | PF 1.86 | Sort 9.34 | MDD 8.34% | 57 trades | eligible
+opus46_max_16apr26_1_v17	opus46_max_16apr26_1_v17 (development)	26.90	-	PNL +107.79% | PF 2.28 | Sort 7.63 | MDD 11.17% | 119 trades | eligible
+opus46_max_16apr26_1_v17	opus46_max_16apr26_1_v17 (evaluation)	-	27.49	PNL +55.87% | PF 2.10 | Sort 15.00 | MDD 7.94% | 68 trades | eligible
+opus46_max_16apr26_1_v17	opus46_max_16apr26_1_v17 (evaluation)	-	27.49	PNL +55.87% | PF 2.10 | Sort 15.00 | MDD 7.94% | 68 trades | eligible
+opus46_max_16apr26_1_v18	opus46_max_16apr26_1_v18 (development)	19.85	-	PNL +105.42% | PF 1.84 | Sort 5.27 | MDD 10.95% | 150 trades | eligible
+opus46_max_16apr26_1_v18	opus46_max_16apr26_1_v18 (development)	19.85	-	PNL +105.42% | PF 1.84 | Sort 5.27 | MDD 10.95% | 150 trades | eligible
+opus46_max_16apr26_1_v18	opus46_max_16apr26_1_v18 (evaluation)	-	9.51	PNL +49.51% | PF 1.69 | Sort 5.63 | MDD 11.43% | 82 trades | eligible
+opus46_max_16apr26_1_v18	opus46_max_16apr26_1_v18 (evaluation)	-	9.51	PNL +49.51% | PF 1.69 | Sort 5.63 | MDD 11.43% | 82 trades | eligible
+opus46_max_16apr26_1_v16	MTF 4h filter (18 sym)	30.88	9.23	Dev +99.69% PF2.38 MDD9.5% 1h+4h filter | Eval +38.55% PF1.86 MDD8.3% 57t
+opus46_max_16apr26_1_v17	MTF 4h filter (22 sym) — BEST	26.90	27.49	Dev +107.79% PF2.28 MDD11.2% | Eval +55.87% PF2.10 MDD7.9% 68t | Eval>Dev!
+opus46_max_16apr26_1_v18	MTF 4h filter (27 sym)	19.85	9.51	Too many noisy symbols degraded quality | 82 eval trades but lower PF
+opus46_max_16apr26_1_v19	opus46_max_16apr26_1_v19 (development)	21.59	-	PNL +99.71% | PF 1.89 | Sort 5.93 | MDD 10.89% | 147 trades | eligible
+opus46_max_16apr26_1_v19	opus46_max_16apr26_1_v19 (evaluation)	-	37.76	PNL +66.05% | PF 2.15 | Sort 20.15 | MDD 10.33% | 79 trades | eligible
+opus46_max_16apr26_1_v20	opus46_max_16apr26_1_v20 (development)	19.85	-	PNL +94.30% | PF 1.93 | Sort 5.76 | MDD 11.53% | 137 trades | eligible
+opus46_max_16apr26_1_v20	opus46_max_16apr26_1_v20 (evaluation)	-	41.95	PNL +73.18% | PF 2.59 | Sort 22.58 | MDD 9.77% | 70 trades | eligible
+opus46_max_16apr26_1_v21	opus46_max_16apr26_1_v21 (development)	21.23	-	PNL +94.30% | PF 1.93 | Sort 5.76 | MDD 10.77% | 137 trades | eligible
+opus46_max_16apr26_1_v21	opus46_max_16apr26_1_v21 (evaluation)	-	37.35	PNL +69.36% | PF 2.51 | Sort 21.35 | MDD 9.77% | 69 trades | eligible
+opus46_max_16apr26_1_v22	opus46_max_16apr26_1_v22 (development)	14.16	-	PNL +84.84% | PF 1.74 | Sort 4.76 | MDD 12.61% | 148 trades | eligible
+opus46_max_16apr26_1_v22	opus46_max_16apr26_1_v22 (evaluation)	-	31.63	PNL +65.09% | PF 2.20 | Sort 19.19 | MDD 9.96% | 74 trades | eligible
+opus46_max_16apr26_1_v20	opus46_max_16apr26_1_v20 (evaluation)	-	41.95	PNL +73.18% | PF 2.59 | Sort 22.58 | MDD 9.77% | 70 trades | eligible
+opus46_max_16apr26_1_v19	Soft 4h (EMA OR red candle)	21.59	37.76	Dev +99.71% PF1.89 MDD10.9% | Eval +66.05% PF2.15 MDD10.3% 79t
+opus46_max_16apr26_1_v20	4h red candle OR close<prev — BEST OVERALL	19.85	41.95	Dev +94.30% PF1.93 MDD10.8% | Eval +73.18% PF2.59 MDD9.8% 70t 52.9%WR | Eval>Dev
+opus46_max_16apr26_1_v21	4h red candle only	21.23	37.35	Dev +94.30% PF1.93 | Eval +69.36% PF2.51 MDD9.8% 69t
+opus46_max_16apr26_1_v22	body_ratio 0.35 (relaxed)	14.16	31.63	Relaxing body_ratio added trades but degraded quality
+opus46_max_16apr26_1_v23	opus46_max_16apr26_1_v23 (development)	24.59	-	PNL +152.46% | PF 1.97 | Sort 5.08 | MDD 14.76% | 172 trades | eligible
+opus46_max_16apr26_1_v23	opus46_max_16apr26_1_v23 (evaluation)	-	66.30	PNL +191.01% | PF 3.23 | Sort 17.26 | MDD 17.69% | 97 trades | eligible
+opus46_max_16apr26_1_v23	V20 + 4h squeeze release signals — BEST EVER	24.59	66.30	Dev +152.46% PF1.97 MDD14.8% | Eval +191.01% PF3.23 MDD17.7% 97t 56.7%WR | 1h:70t+4h:27t both profitable
+opus46_max_16apr26_1_v23b	opus46_max_16apr26_1_v23b (development)	20.13	-	PNL +136.46% | PF 1.91 | Sort 4.73 | MDD 15.37% | 162 trades | eligible
+opus46_max_16apr26_1_v23b	opus46_max_16apr26_1_v23b (evaluation)	-	55.98	PNL +173.09% | PF 3.16 | Sort 15.60 | MDD 17.25% | 86 trades | eligible
+opus46_max_16apr26_1_v24	v24 21-symbol live-safe Binance USD-M universe; MATICUSDT removed, no POL substitution	0.23	3.10	Approx 21-symbol: Dev +117.19% PF1.76 MDD17.13% 159t | Eval +147.04% PF2.59 MDD13.09% 86t | Test +101.06% PF1.44 MDD47.74% 191t
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (development)	15.56	-	PNL +125.61% | PF 1.79 | Sort 4.33 | MDD 16.44% | 165 trades | eligible
+opus46_max_16apr26_1_v24	V23b + 1-bar lag on 4h — NEW BEST EVER	15.56	207.99	Dev +125.61% PF1.79 MDD16.4% 165t | Eval +156.30% PF2.75 MDD11.7% 87t 52.9%WR Sort53.14 | 1h:59t+4h:28t both strongly profitable
+opus46_max_16apr26_1_v25	opus46_max_16apr26_1_v25 (evaluation)	-	21.97	PNL +93.29% | PF 1.92 | Sort 12.85 | MDD 17.29% | 77 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	196.26	PNL +151.73% | PF 2.67 | Sort 51.56 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24_exact	V24 EXACT confirmation	15.56	196.26	EXACT eval: +151.73% PF2.67 MDD11.7% Sort51.56 87t 51.7%WR | Confirms approximate result
+opus46_max_16apr26_1_v26	opus46_max_16apr26_1_v26 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v27	opus46_max_16apr26_1_v27 (evaluation)	-	197.80	PNL +152.34% | PF 2.63 | Sort 51.77 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (test)	3.99 (test)	-	PNL +114.11% | PF 1.50 | Sort 3.17 | MDD 45.31% | 196 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	142.51	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 17.03% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	196.26	PNL +151.73% | PF 2.67 | Sort 51.56 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (test)	3.30 (test)	-	PNL +103.74% | PF 1.45 | Sort 2.86 | MDD 47.64% | 196 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (development)	19.86	-	PNL +140.16% | PF 1.92 | Sort 4.89 | MDD 16.10% | 165 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	142.51	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 17.03% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (development)	15.56	-	PNL +125.61% | PF 1.79 | Sort 4.33 | MDD 16.44% | 165 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (complete)	36.31 (complete)	-	PNL +396.01% | PF 1.83 | Sort 5.27 | MDD 25.24% | 448 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	207.99	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (test)	3.99 (test)	-	PNL +114.11% | PF 1.50 | Sort 3.17 | MDD 45.31% | 196 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	47.82	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | Gen 57.28 | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (evaluation)	-	47.82	PNL +156.30% | PF 2.75 | Sort 53.14 | MDD 11.66% | Gen 22.80 | 87 trades | eligible
+opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (development)	0.27	-	PNL +125.76% | PF 1.79 | Sort 4.33 | MDD 16.45% | Gen 0.261 | 165 trades | eligible

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Run a research experiment by directory name.
+#
+# Usage:
+#   ./rust_port/bin/run_research <experiment> eval --windows dev [--approximate]
+#   ./rust_port/bin/run_research <experiment> validate --windows dev
+#
+# Examples:
+#   ./rust_port/bin/run_research opus46_max_16apr26_1 eval --windows dev
+#   ./rust_port/bin/run_research my_strategy eval --windows eval --exact
+#
+# Use `./rust_port/bin/run_research` with no arguments to list available experiments.
+
+set -euo pipefail
+
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <experiment_name> <command> [args...]"
+    echo ""
+    echo "Commands:"
+    echo "  eval      Run evaluation"
+    echo "  validate  Run no-lookahead validation"
+    echo ""
+    echo "Available experiments:"
+    # Find directories under research/ that have Cargo.toml
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    RUST_DIR="$(dirname "$SCRIPT_DIR")"
+    for d in "$RUST_DIR"/research/*/; do
+        if [ -f "$d/Cargo.toml" ]; then
+            basename "$d"
+        fi
+    done
+    exit 2
+fi
+
+EXPERIMENT="$1"
+shift
+
+# Find rust_port directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+RUST_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Derive crate name
+CRATE_NAME="ct-research-$(echo "$EXPERIMENT" | tr '_' '-')"
+
+if [ ! -d "$RUST_DIR/research/$EXPERIMENT" ]; then
+    echo "Error: experiment '$EXPERIMENT' not found at $RUST_DIR/research/$EXPERIMENT"
+    exit 1
+fi
+
+cd "$RUST_DIR"
+exec cargo run --release -p "$CRATE_NAME" -- "$@"

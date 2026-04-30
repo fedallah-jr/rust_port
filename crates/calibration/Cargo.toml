@@ -1,0 +1,9 @@
+[package]
+name = "claude-trader-calibration"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+claude-trader-models.workspace = true
+serde_json.workspace = true
+rayon = "1"

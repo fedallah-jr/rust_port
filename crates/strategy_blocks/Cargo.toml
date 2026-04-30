@@ -1,0 +1,15 @@
+[package]
+name = "claude-trader-strategy-blocks"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "claude_trader_strategy_blocks"
+path = "src/lib.rs"
+
+[dependencies]
+claude-trader-models.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+claude-trader-indicators = { path = "../indicators" }

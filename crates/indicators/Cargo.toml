@@ -1,0 +1,10 @@
+[package]
+name = "claude-trader-indicators"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+claude-trader-models.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "ct-research-opus46-max-16apr26-1"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "ct-research-opus46-max-16apr26-1"
+path = "src/main.rs"
+
+[dependencies]
+claude-trader-research-runtime.workspace = true
+claude-trader-models.workspace = true
+claude-trader-indicators.workspace = true
+chrono.workspace = true
+serde_json.workspace = true

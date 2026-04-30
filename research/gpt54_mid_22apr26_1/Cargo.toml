@@ -1,0 +1,17 @@
+[package]
+name = "ct-research-gpt54-mid-22apr26-1"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "ct-research-gpt54-mid-22apr26-1"
+path = "src/main.rs"
+
+[dependencies]
+claude-trader-research-runtime = { path = "../../crates/research_runtime" }
+claude-trader-models = { path = "../../crates/models" }
+claude-trader-indicators = { path = "../../crates/indicators" }
+chrono = { version = "0.4", features = ["serde"] }
+serde_json = "1"
+
+[workspace]

@@ -1,0 +1,11 @@
+[package]
+name = "ct-scaffold"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "ct-scaffold"
+path = "src/main.rs"
+
+[dependencies]
+claude-trader-research-runtime.workspace = true

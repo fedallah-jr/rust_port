@@ -1,0 +1,11 @@
+[package]
+name = "claude-trader-evaluator"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+claude-trader-models.workspace = true
+claude-trader-resolver.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true

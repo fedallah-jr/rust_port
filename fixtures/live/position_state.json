@@ -1,0 +1,68 @@
+{
+  "description": "Single OPEN LONG position with entry filled, TP/SL pending",
+  "positions": [
+    {
+      "entry_order": {
+        "algo_id": 0,
+        "avg_fill_price": 50000.0,
+        "filled_qty": 0.002,
+        "order_id": 12345,
+        "order_type": "MARKET",
+        "price": 0.0,
+        "quantity": 0.002,
+        "side": "BUY",
+        "status": "FILLED",
+        "stop_price": 0.0,
+        "symbol": "BTCUSDT"
+      },
+      "fill_price": 50000.0,
+      "opened_at": "2024-06-01T12:00:01+00:00",
+      "position_id": "test-pos-001",
+      "quantity": 0.002,
+      "signal": {
+        "entry_delay_seconds": null,
+        "entry_price": null,
+        "fill_timeout_seconds": 3600,
+        "leverage": 5.0,
+        "market_type": "FUTURES",
+        "max_holding_hours": 72,
+        "position_type": "LONG",
+        "signal_date": "2024-06-01T12:00:00+00:00",
+        "sl_pct": 1.5,
+        "sl_price": null,
+        "taker_fee_rate": 0.0005,
+        "ticker": "BTCUSDT",
+        "tp_pct": 3.0,
+        "tp_price": null
+      },
+      "sl_order": {
+        "algo_id": 0,
+        "avg_fill_price": 0.0,
+        "filled_qty": 0.0,
+        "order_id": 12347,
+        "order_type": "STOP_MARKET",
+        "price": 0.0,
+        "quantity": 0.002,
+        "side": "SELL",
+        "status": "NEW",
+        "stop_price": 49225.0,
+        "symbol": "BTCUSDT"
+      },
+      "status": "OPEN",
+      "strategy_id": "TestStrategy",
+      "tp_order": {
+        "algo_id": 0,
+        "avg_fill_price": 0.0,
+        "filled_qty": 0.0,
+        "order_id": 12346,
+        "order_type": "TAKE_PROFIT_MARKET",
+        "price": 0.0,
+        "quantity": 0.002,
+        "side": "SELL",
+        "status": "NEW",
+        "stop_price": 51550.0,
+        "symbol": "BTCUSDT"
+      }
+    }
+  ]
+}

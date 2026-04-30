@@ -1,0 +1,26 @@
+{
+  "expected_best_params": {
+    "atr_mult": 1.0,
+    "rsi_threshold": 50
+  },
+  "expected_best_score": 99.0,
+  "expected_candidates_evaluated": 28,
+  "frame_rows": 200,
+  "param_space": {
+    "atr_mult": [
+      1.0,
+      1.5,
+      2.0,
+      2.5
+    ],
+    "rsi_threshold": [
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50
+    ]
+  }
+}

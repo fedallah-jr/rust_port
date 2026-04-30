@@ -1,0 +1,23 @@
+[package]
+name = "claude-trader-live-opus46"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "live-opus46"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+claude-trader-models.workspace = true
+claude-trader-live.workspace = true
+claude-trader-indicators.workspace = true
+claude-trader-btc-structure.workspace = true
+claude-trader-research-runtime.workspace = true
+ct-research-opus46-max-16apr26-1 = { path = "../../research/opus46_max_16apr26_1" }
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+log.workspace = true

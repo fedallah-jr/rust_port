@@ -1,0 +1,79 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/models",
+    "crates/resolver",
+    "crates/indicators",
+    "crates/data",
+    "crates/btc_structure",
+    "crates/calibration",
+    "crates/evaluator",
+    "crates/live",
+    "crates/live_opus46",
+    "crates/strategy_blocks",
+    "crates/research_runtime",
+    "tools/scaffold",
+    "tools/repair_gaps",
+    "research/opus46_max_16apr26_1",
+    "research/opus47_max_20apr26_1",
+    "research/opus47_max_23apr26_2",
+]
+
+# Don't compile research experiments by default (only on targeted builds)
+default-members = [
+    "crates/models",
+    "crates/resolver",
+    "crates/indicators",
+    "crates/data",
+    "crates/btc_structure",
+    "crates/calibration",
+    "crates/evaluator",
+    "crates/live",
+    "crates/live_opus46",
+    "crates/strategy_blocks",
+    "crates/research_runtime",
+    "tools/scaffold",
+    "tools/repair_gaps",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Proprietary"
+
+[workspace.dependencies]
+# Shared across workspace
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+thiserror = "2"
+pyo3 = { version = "0.22", features = ["chrono"] }
+
+# Third-party deps used by 2+ crates — hoisted to guard against version drift.
+reqwest = { version = "0.12", features = ["json", "blocking"] }
+sha2 = "0.10"
+log = "0.4"
+crc32fast = "1.5"
+
+# Internal crates
+claude-trader-models = { path = "crates/models" }
+claude-trader-resolver = { path = "crates/resolver" }
+claude-trader-indicators = { path = "crates/indicators" }
+claude-trader-data = { path = "crates/data" }
+claude-trader-btc-structure = { path = "crates/btc_structure" }
+claude-trader-strategy-blocks = { path = "crates/strategy_blocks" }
+claude-trader-calibration = { path = "crates/calibration" }
+claude-trader-evaluator = { path = "crates/evaluator" }
+claude-trader-live = { path = "crates/live" }
+claude-trader-research-runtime = { path = "crates/research_runtime" }
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+debug = false
+
+[profile.release]
+lto = true
+codegen-units = 1

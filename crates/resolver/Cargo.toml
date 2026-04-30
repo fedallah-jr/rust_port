@@ -1,0 +1,17 @@
+[package]
+name = "claude-trader-resolver"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+claude-trader-models.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+criterion = "0.5"
+smallvec = { version = "1", features = ["const_generics"] }
+
+[[bench]]
+name = "exit_bench"
+harness = false

@@ -1,0 +1,962 @@
+[
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.1,
+    "expected_gross_pnl_pct": 3.0,
+    "expected_net_pnl_pct": 2.9,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.04,
+    "expected_gross_pnl_pct": 3.0,
+    "expected_net_pnl_pct": 2.96,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 3.0,
+    "expected_net_pnl_pct": 3.0,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.5,
+    "expected_gross_pnl_pct": 15.0,
+    "expected_net_pnl_pct": 14.5,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.2,
+    "expected_gross_pnl_pct": 15.0,
+    "expected_net_pnl_pct": 14.8,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 15.0,
+    "expected_net_pnl_pct": 15.0,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 1.0,
+    "expected_gross_pnl_pct": 30.0,
+    "expected_net_pnl_pct": 29.0,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.4,
+    "expected_gross_pnl_pct": 30.0,
+    "expected_net_pnl_pct": 29.6,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 30.0,
+    "expected_net_pnl_pct": 30.0,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 2.0,
+    "expected_gross_pnl_pct": 60.0,
+    "expected_net_pnl_pct": 58.0,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.8,
+    "expected_gross_pnl_pct": 60.0,
+    "expected_net_pnl_pct": 59.2,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 60.0,
+    "expected_net_pnl_pct": 60.0,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.1,
+    "expected_gross_pnl_pct": -3.0,
+    "expected_net_pnl_pct": -3.1,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.04,
+    "expected_gross_pnl_pct": -3.0,
+    "expected_net_pnl_pct": -3.04,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -3.0,
+    "expected_net_pnl_pct": -3.0,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.5,
+    "expected_gross_pnl_pct": -15.0,
+    "expected_net_pnl_pct": -15.5,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.2,
+    "expected_gross_pnl_pct": -15.0,
+    "expected_net_pnl_pct": -15.2,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -15.0,
+    "expected_net_pnl_pct": -15.0,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 1.0,
+    "expected_gross_pnl_pct": -30.0,
+    "expected_net_pnl_pct": -31.0,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.4,
+    "expected_gross_pnl_pct": -30.0,
+    "expected_net_pnl_pct": -30.4,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -30.0,
+    "expected_net_pnl_pct": -30.0,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 2.0,
+    "expected_gross_pnl_pct": -60.0,
+    "expected_net_pnl_pct": -62.0,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.8,
+    "expected_gross_pnl_pct": -60.0,
+    "expected_net_pnl_pct": -60.8,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 51500.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -60.0,
+    "expected_net_pnl_pct": -60.0,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.1,
+    "expected_gross_pnl_pct": -2.0,
+    "expected_net_pnl_pct": -2.1,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.04,
+    "expected_gross_pnl_pct": -2.0,
+    "expected_net_pnl_pct": -2.04,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -2.0,
+    "expected_net_pnl_pct": -2.0,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.5,
+    "expected_gross_pnl_pct": -10.0,
+    "expected_net_pnl_pct": -10.5,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.2,
+    "expected_gross_pnl_pct": -10.0,
+    "expected_net_pnl_pct": -10.2,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -10.0,
+    "expected_net_pnl_pct": -10.0,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 1.0,
+    "expected_gross_pnl_pct": -20.0,
+    "expected_net_pnl_pct": -21.0,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.4,
+    "expected_gross_pnl_pct": -20.0,
+    "expected_net_pnl_pct": -20.4,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -20.0,
+    "expected_net_pnl_pct": -20.0,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 2.0,
+    "expected_gross_pnl_pct": -40.0,
+    "expected_net_pnl_pct": -42.0,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.8,
+    "expected_gross_pnl_pct": -40.0,
+    "expected_net_pnl_pct": -40.8,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -40.0,
+    "expected_net_pnl_pct": -40.0,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.1,
+    "expected_gross_pnl_pct": 2.0,
+    "expected_net_pnl_pct": 1.9,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.04,
+    "expected_gross_pnl_pct": 2.0,
+    "expected_net_pnl_pct": 1.96,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 2.0,
+    "expected_net_pnl_pct": 2.0,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.5,
+    "expected_gross_pnl_pct": 10.0,
+    "expected_net_pnl_pct": 9.5,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.2,
+    "expected_gross_pnl_pct": 10.0,
+    "expected_net_pnl_pct": 9.8,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 10.0,
+    "expected_net_pnl_pct": 10.0,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 1.0,
+    "expected_gross_pnl_pct": 20.0,
+    "expected_net_pnl_pct": 19.0,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.4,
+    "expected_gross_pnl_pct": 20.0,
+    "expected_net_pnl_pct": 19.6,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 20.0,
+    "expected_net_pnl_pct": 20.0,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 2.0,
+    "expected_gross_pnl_pct": 40.0,
+    "expected_net_pnl_pct": 38.0,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.8,
+    "expected_gross_pnl_pct": 40.0,
+    "expected_net_pnl_pct": 39.2,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 50000.0,
+    "exit_price": 49000.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 40.0,
+    "expected_net_pnl_pct": 40.0,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.1,
+    "expected_gross_pnl_pct": 3.0,
+    "expected_net_pnl_pct": 2.9,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.04,
+    "expected_gross_pnl_pct": 3.0,
+    "expected_net_pnl_pct": 2.96,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 3.0,
+    "expected_net_pnl_pct": 3.0,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.5,
+    "expected_gross_pnl_pct": 15.0,
+    "expected_net_pnl_pct": 14.5,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.2,
+    "expected_gross_pnl_pct": 15.0,
+    "expected_net_pnl_pct": 14.8,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 15.0,
+    "expected_net_pnl_pct": 15.0,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 1.0,
+    "expected_gross_pnl_pct": 30.0,
+    "expected_net_pnl_pct": 29.0,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.4,
+    "expected_gross_pnl_pct": 30.0,
+    "expected_net_pnl_pct": 29.6,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 30.0,
+    "expected_net_pnl_pct": 30.0,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 2.0,
+    "expected_gross_pnl_pct": 60.0,
+    "expected_net_pnl_pct": 58.0,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.8,
+    "expected_gross_pnl_pct": 60.0,
+    "expected_net_pnl_pct": 59.2,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 60.0,
+    "expected_net_pnl_pct": 60.0,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.1,
+    "expected_gross_pnl_pct": -3.0,
+    "expected_net_pnl_pct": -3.1,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.04,
+    "expected_gross_pnl_pct": -3.0,
+    "expected_net_pnl_pct": -3.04,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -3.0,
+    "expected_net_pnl_pct": -3.0,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.5,
+    "expected_gross_pnl_pct": -15.0,
+    "expected_net_pnl_pct": -15.5,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.2,
+    "expected_gross_pnl_pct": -15.0,
+    "expected_net_pnl_pct": -15.2,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -15.0,
+    "expected_net_pnl_pct": -15.0,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 1.0,
+    "expected_gross_pnl_pct": -30.0,
+    "expected_net_pnl_pct": -31.0,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.4,
+    "expected_gross_pnl_pct": -30.0,
+    "expected_net_pnl_pct": -30.4,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -30.0,
+    "expected_net_pnl_pct": -30.0,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 2.0,
+    "expected_gross_pnl_pct": -60.0,
+    "expected_net_pnl_pct": -62.0,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.8,
+    "expected_gross_pnl_pct": -60.0,
+    "expected_net_pnl_pct": -60.8,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 103.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -60.0,
+    "expected_net_pnl_pct": -60.0,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.1,
+    "expected_gross_pnl_pct": -2.0,
+    "expected_net_pnl_pct": -2.1,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.04,
+    "expected_gross_pnl_pct": -2.0,
+    "expected_net_pnl_pct": -2.04,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -2.0,
+    "expected_net_pnl_pct": -2.0,
+    "is_long": true,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.5,
+    "expected_gross_pnl_pct": -10.0,
+    "expected_net_pnl_pct": -10.5,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.2,
+    "expected_gross_pnl_pct": -10.0,
+    "expected_net_pnl_pct": -10.2,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -10.0,
+    "expected_net_pnl_pct": -10.0,
+    "is_long": true,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 1.0,
+    "expected_gross_pnl_pct": -20.0,
+    "expected_net_pnl_pct": -21.0,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.4,
+    "expected_gross_pnl_pct": -20.0,
+    "expected_net_pnl_pct": -20.4,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -20.0,
+    "expected_net_pnl_pct": -20.0,
+    "is_long": true,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 2.0,
+    "expected_gross_pnl_pct": -40.0,
+    "expected_net_pnl_pct": -42.0,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.8,
+    "expected_gross_pnl_pct": -40.0,
+    "expected_net_pnl_pct": -40.8,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": -40.0,
+    "expected_net_pnl_pct": -40.0,
+    "is_long": true,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.1,
+    "expected_gross_pnl_pct": 2.0,
+    "expected_net_pnl_pct": 1.9,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.04,
+    "expected_gross_pnl_pct": 2.0,
+    "expected_net_pnl_pct": 1.96,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 2.0,
+    "expected_net_pnl_pct": 2.0,
+    "is_long": false,
+    "leverage": 1.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.5,
+    "expected_gross_pnl_pct": 10.0,
+    "expected_net_pnl_pct": 9.5,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.2,
+    "expected_gross_pnl_pct": 10.0,
+    "expected_net_pnl_pct": 9.8,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 10.0,
+    "expected_net_pnl_pct": 10.0,
+    "is_long": false,
+    "leverage": 5.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 1.0,
+    "expected_gross_pnl_pct": 20.0,
+    "expected_net_pnl_pct": 19.0,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.4,
+    "expected_gross_pnl_pct": 20.0,
+    "expected_net_pnl_pct": 19.6,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 20.0,
+    "expected_net_pnl_pct": 20.0,
+    "is_long": false,
+    "leverage": 10.0,
+    "taker_fee_rate": 0.0
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 2.0,
+    "expected_gross_pnl_pct": 40.0,
+    "expected_net_pnl_pct": 38.0,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0005
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.8,
+    "expected_gross_pnl_pct": 40.0,
+    "expected_net_pnl_pct": 39.2,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0002
+  },
+  {
+    "entry_price": 100.0,
+    "exit_price": 98.0,
+    "expected_fee_drag_pct": 0.0,
+    "expected_gross_pnl_pct": 40.0,
+    "expected_net_pnl_pct": 40.0,
+    "is_long": false,
+    "leverage": 20.0,
+    "taker_fee_rate": 0.0
+  }
+]

@@ -1,0 +1,28 @@
+[package]
+name = "claude-trader-live"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+claude-trader-models.workspace = true
+claude-trader-data.workspace = true
+claude-trader-resolver.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+reqwest.workspace = true
+hmac = "0.12"
+sha2.workspace = true
+log.workspace = true
+hex = "0.4"
+urlencoding = "2"
+uuid = { version = "1", features = ["v4"] }
+rust_decimal = { version = "1", default-features = false, features = ["std", "serde"] }
+signal-hook = "0.3"
+rand = "0.8"
+
+[dev-dependencies]
+# tiny_http powers the mock Binance server used by the integration tests.
+# Sync + dependency-light, matches our blocking reqwest::Client.
+tiny_http = "0.12"

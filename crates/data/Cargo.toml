@@ -1,0 +1,16 @@
+[package]
+name = "claude-trader-data"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+claude-trader-models.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+reqwest.workspace = true
+sha2.workspace = true
+log.workspace = true
+crc32fast.workspace = true
+bincode = "1"
