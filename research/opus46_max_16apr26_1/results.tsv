@@ -52,7 +52,7 @@ opus46_max_16apr26_1_v23	opus46_max_16apr26_1_v23 (evaluation)	-	66.30	PNL +191.
 opus46_max_16apr26_1_v23	V20 + 4h squeeze release signals — BEST EVER	24.59	66.30	Dev +152.46% PF1.97 MDD14.8% | Eval +191.01% PF3.23 MDD17.7% 97t 56.7%WR | 1h:70t+4h:27t both profitable
 opus46_max_16apr26_1_v23b	opus46_max_16apr26_1_v23b (development)	20.13	-	PNL +136.46% | PF 1.91 | Sort 4.73 | MDD 15.37% | 162 trades | eligible
 opus46_max_16apr26_1_v23b	opus46_max_16apr26_1_v23b (evaluation)	-	55.98	PNL +173.09% | PF 3.16 | Sort 15.60 | MDD 17.25% | 86 trades | eligible
-opus46_max_16apr26_1_v24	v24 21-symbol live-safe Binance USD-M universe; MATICUSDT removed, no POL substitution	0.23	3.10	Approx 21-symbol: Dev +117.19% PF1.76 MDD17.13% 159t | Eval +147.04% PF2.59 MDD13.09% 86t | Test +101.06% PF1.44 MDD47.74% 191t
+opus46_max_16apr26_1_v24	v24 21-symbol live-safe Binance USD-M universe; MATICUSDT removed, no POL substitution	0.05 (test)	3.10	Approx 21-symbol: Dev +117.19% PF1.76 MDD17.13% 159t | Eval +147.04% PF2.59 MDD13.09% 86t | Test +101.06% PF1.44 MDD47.74% 191t
 opus46_max_16apr26_1_v24	opus46_max_16apr26_1_v24 (development)	15.56	-	PNL +125.61% | PF 1.79 | Sort 4.33 | MDD 16.44% | 165 trades | eligible
 opus46_max_16apr26_1_v24	V23b + 1-bar lag on 4h — NEW BEST EVER	15.56	207.99	Dev +125.61% PF1.79 MDD16.4% 165t | Eval +156.30% PF2.75 MDD11.7% 87t 52.9%WR Sort53.14 | 1h:59t+4h:28t both strongly profitable
 opus46_max_16apr26_1_v25	opus46_max_16apr26_1_v25 (evaluation)	-	21.97	PNL +93.29% | PF 1.92 | Sort 12.85 | MDD 17.29% | 77 trades | eligible

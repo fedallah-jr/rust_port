@@ -12,9 +12,13 @@
 //!   2. `set_poll_time(now)` immediately before every `poll()`. Generators
 //!      MUST use this instead of `Utc::now()` so all slots polling on the
 //!      same boundary share a clock.
-//!   3. `poll()` returns the signals to consider this poll. Empty Vec is the
+//!   3. `prepare_poll(next_boundary)` is called from the engine's pre-poll
+//!      phase when a boundary is imminent. Strategies can use this as a
+//!      best-effort cache/status hook; errors are logged by the engine and
+//!      the definitive fail-closed check still belongs in `poll()`.
+//!   4. `poll()` returns the signals to consider this poll. Empty Vec is the
 //!      no-trade case. `Err(FatalSignalError)` halts the engine.
-//!   4. `teardown()` on shutdown.
+//!   5. `teardown()` on shutdown.
 //!
 //! The trait is `Send` so the engine can hold `Box<dyn LiveSignalGenerator>`
 //! and so future multi-thread polling stays an option. It is *not* `Sync` —
@@ -109,10 +113,7 @@ pub trait LiveSignalGenerator: Send {
     ///
     /// Setup errors of either variant are treated as fatal — the engine
     /// will not start trading without a successful warmup.
-    fn setup(
-        &mut self,
-        _client: Arc<dyn LiveMarketClient>,
-    ) -> Result<(), SignalError> {
+    fn setup(&mut self, _client: Arc<dyn LiveMarketClient>) -> Result<(), SignalError> {
         Ok(())
     }
 
@@ -120,6 +121,14 @@ pub trait LiveSignalGenerator: Send {
     /// `Utc::now()` so two slots polling the same boundary observe a
     /// consistent clock.
     fn set_poll_time(&mut self, _now: DateTime<Utc>) {}
+
+    /// Best-effort hook called during the engine's pre-poll phase for the
+    /// upcoming boundary. The engine logs both success and failure, then
+    /// continues; `poll()` remains responsible for refusing to emit if a
+    /// required warmup/context input is not ready.
+    fn prepare_poll(&mut self, _next_boundary: DateTime<Utc>) -> Result<(), SignalError> {
+        Ok(())
+    }
 
     /// Produce zero or more signals. Empty Vec means no-trade this poll.
     /// - `Err(SignalError::Fatal)` halts the engine after a clean shutdown.

@@ -75,6 +75,23 @@ struct GeneratorSlot {
     last_signal_poll_boundary: Option<DateTime<Utc>>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SchedulerPhase {
+    Coarse,
+    Intensive,
+    PrePollLead,
+}
+
+impl SchedulerPhase {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Coarse => "coarse",
+            Self::Intensive => "intensive",
+            Self::PrePollLead => "pre-poll-lead",
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // LiveEngine
 // ---------------------------------------------------------------------------
@@ -90,6 +107,7 @@ pub struct LiveEngine {
     last_reconcile: Option<DateTime<Utc>>,
     last_fill_check: Option<DateTime<Utc>>,
     last_bracket_recovery: Option<DateTime<Utc>>,
+    last_scheduler_log: Option<(DateTime<Utc>, SchedulerPhase)>,
     shutdown_requested: Arc<AtomicBool>,
     install_signal_handlers: bool,
 }
@@ -125,8 +143,7 @@ impl LiveEngine {
         }
 
         let mut seen_ids: HashSet<String> = HashSet::new();
-        let mut symbol_owner: std::collections::HashMap<String, String> =
-            Default::default();
+        let mut symbol_owner: std::collections::HashMap<String, String> = Default::default();
         let mut slots: Vec<GeneratorSlot> = Vec::with_capacity(generators.len());
 
         for (gen, budget) in generators {
@@ -174,6 +191,7 @@ impl LiveEngine {
             last_reconcile: None,
             last_fill_check: None,
             last_bracket_recovery: None,
+            last_scheduler_log: None,
             shutdown_requested: Arc::new(AtomicBool::new(false)),
             install_signal_handlers: true,
         })
@@ -225,13 +243,22 @@ impl LiveEngine {
         // Both are inside a closure so failure short-circuits to the
         // unconditional shutdown step below.
         let setup_result = (|| -> Result<()> {
+            eprintln!("LiveEngine setup: {} strategy slot(s)", self.slots.len());
             for slot in self.slots.iter_mut() {
                 // Setup errors of either variant are treated as fatal —
                 // refusing to trade without a successful warmup matches the
                 // Python invariant.
+                eprintln!(
+                    "  setting up [{}] symbols={} analysis={} poll={}",
+                    slot.strategy_id,
+                    slot.declared_symbols.len(),
+                    slot.generator.analysis_interval(),
+                    slot.poll_interval,
+                );
                 slot.generator
                     .setup(self.market_client.clone())
                     .map_err(|e| LiveError::Fatal(e.message().to_string()))?;
+                eprintln!("  [{}] setup complete", slot.strategy_id);
             }
             if self.install_signal_handlers {
                 shutdown::install(&self.shutdown_requested)?;
@@ -266,6 +293,7 @@ impl LiveEngine {
             }
             let sleep_now = self.client.server_now();
             let sleep_s = self.sleep_interval(sleep_now, check_interval);
+            self.log_scheduler_sleep(sleep_now, sleep_s, check_interval);
             self.sleeper.sleep(Duration::from_secs_f64(sleep_s));
         }
         Ok(())
@@ -321,17 +349,14 @@ impl LiveEngine {
             if !matches!(p.status, claude_trader_models::PositionStatus::Open) {
                 return false;
             }
-            engine_is_placeholder(p.tp_order.as_ref())
-                || engine_is_placeholder(p.sl_order.as_ref())
+            engine_is_placeholder(p.tp_order.as_ref()) || engine_is_placeholder(p.sl_order.as_ref())
         });
         if !any_placeholder {
             return false;
         }
         match self.last_bracket_recovery {
             None => true,
-            Some(t) => {
-                (now - t).num_milliseconds() as f64 >= BRACKET_RECOVERY_INTERVAL_S * 1000.0
-            }
+            Some(t) => (now - t).num_milliseconds() as f64 >= BRACKET_RECOVERY_INTERVAL_S * 1000.0,
         }
     }
 
@@ -351,9 +376,11 @@ impl LiveEngine {
             // First check: always run when there's anything to check.
             None => return true,
         };
-        let has_pending = self.tracker.positions().iter().any(|p| {
-            matches!(p.status, claude_trader_models::PositionStatus::PendingEntry)
-        });
+        let has_pending = self
+            .tracker
+            .positions()
+            .iter()
+            .any(|p| matches!(p.status, claude_trader_models::PositionStatus::PendingEntry));
         let min_interval = if has_pending {
             check_interval
         } else {
@@ -363,14 +390,20 @@ impl LiveEngine {
     }
 
     fn pre_poll_lead_seconds(&self, check_interval: f64) -> f64 {
-        let min_poll =
-            self.slots.iter().map(|s| s.poll_interval_seconds).fold(f64::INFINITY, f64::min);
+        let min_poll = self
+            .slots
+            .iter()
+            .map(|s| s.poll_interval_seconds)
+            .fold(f64::INFINITY, f64::min);
         PRE_POLL_LEAD_CAP_S.min(check_interval.max(min_poll / 6.0))
     }
 
     fn intensive_poll_lead_seconds(&self, check_interval: f64) -> f64 {
-        let min_poll =
-            self.slots.iter().map(|s| s.poll_interval_seconds).fold(f64::INFINITY, f64::min);
+        let min_poll = self
+            .slots
+            .iter()
+            .map(|s| s.poll_interval_seconds)
+            .fold(f64::INFINITY, f64::min);
         INTENSIVE_POLL_LEAD_CAP_S.min(check_interval.max(min_poll / 6.0))
     }
 
@@ -382,7 +415,10 @@ impl LiveEngine {
                 None => continue,
             };
             let lead_window_start = next_b - chrono::Duration::milliseconds((lead * 1000.0) as i64);
-            if now >= lead_window_start && now < next_b && slot.last_pre_poll_boundary != Some(next_b) {
+            if now >= lead_window_start
+                && now < next_b
+                && slot.last_pre_poll_boundary != Some(next_b)
+            {
                 return true;
             }
         }
@@ -415,9 +451,11 @@ impl LiveEngine {
     }
 
     fn fill_check_interval(&self, check_interval: f64) -> f64 {
-        let has_pending = self.tracker.positions().iter().any(|p| {
-            matches!(p.status, claude_trader_models::PositionStatus::PendingEntry)
-        });
+        let has_pending = self
+            .tracker
+            .positions()
+            .iter()
+            .any(|p| matches!(p.status, claude_trader_models::PositionStatus::PendingEntry));
         if has_pending {
             check_interval
         } else {
@@ -442,13 +480,18 @@ impl LiveEngine {
             Some(b) => b,
             None => return check_interval,
         };
-        let seconds_until_boundary =
-            ((next_b - now).num_milliseconds() as f64 / 1000.0).max(0.0);
+        let seconds_until_boundary = ((next_b - now).num_milliseconds() as f64 / 1000.0).max(0.0);
 
         if self.has_local_active_positions() {
-            return self
-                .fill_check_interval(check_interval)
-                .min(seconds_until_boundary);
+            let fill_interval = self.fill_check_interval(check_interval);
+            let pre_poll_lead = self.pre_poll_lead_seconds(check_interval);
+            if seconds_until_boundary > pre_poll_lead {
+                // Do not let the open-position fill-check cadence jump over
+                // the pre-poll lead window. Without this, a 30s open-position
+                // sleep can land exactly on HH:00:00 and skip pre-poll.
+                return fill_interval.min(seconds_until_boundary - pre_poll_lead);
+            }
+            return check_interval.min(seconds_until_boundary);
         }
         let lead = self.intensive_poll_lead_seconds(check_interval);
         if seconds_until_boundary <= lead {
@@ -456,6 +499,40 @@ impl LiveEngine {
         }
         let coarse_sleep = seconds_until_boundary - lead;
         check_interval.max(coarse_sleep)
+    }
+
+    fn log_scheduler_sleep(&mut self, now: DateTime<Utc>, sleep_s: f64, check_interval: f64) {
+        let next_b = match self.earliest_next_boundary(now) {
+            Some(b) => b,
+            None => return,
+        };
+        let seconds_until_boundary = ((next_b - now).num_milliseconds() as f64 / 1000.0).max(0.0);
+        let pre_lead = self.pre_poll_lead_seconds(check_interval);
+        let intensive_lead = self.intensive_poll_lead_seconds(check_interval);
+        let phase = if seconds_until_boundary <= pre_lead {
+            SchedulerPhase::PrePollLead
+        } else if seconds_until_boundary <= intensive_lead {
+            SchedulerPhase::Intensive
+        } else {
+            SchedulerPhase::Coarse
+        };
+
+        let should_log = self
+            .last_scheduler_log
+            .map(|(boundary, last_phase)| boundary != next_b || last_phase != phase)
+            .unwrap_or(true);
+        if !should_log {
+            return;
+        }
+        self.last_scheduler_log = Some((next_b, phase));
+        eprintln!(
+            "Scheduler {} UTC | next_boundary={} UTC in {:.1}s | phase={} | sleep={:.3}s",
+            now.format("%H:%M:%S"),
+            next_b.format("%H:%M:%S"),
+            seconds_until_boundary,
+            phase.as_str(),
+            sleep_s,
+        );
     }
 
     // -- Pre-poll -----------------------------------------------------------
@@ -468,13 +545,51 @@ impl LiveEngine {
         // slot has no pending poll — Python parity, prevents firing the
         // pre-poll twice for the same slot/boundary pair.
         let lead = self.pre_poll_lead_seconds(self.config.order_check_interval_seconds);
-        for slot in self.slots.iter_mut() {
+        let mut covered: Vec<(usize, DateTime<Utc>)> = Vec::new();
+        for (i, slot) in self.slots.iter_mut().enumerate() {
             if let Some(next_b) = next_boundary_for(slot, now) {
                 let lead_window_start =
                     next_b - chrono::Duration::milliseconds((lead * 1000.0) as i64);
                 if now >= lead_window_start && now < next_b {
                     slot.last_pre_poll_boundary = Some(next_b);
+                    covered.push((i, next_b));
                 }
+            }
+        }
+
+        let due_labels: Vec<String> = covered
+            .iter()
+            .filter_map(|(i, b)| {
+                self.slots
+                    .get(*i)
+                    .map(|slot| format!("{}@{}", slot.strategy_id, b.format("%H:%M:%S")))
+            })
+            .collect();
+        eprintln!(
+            "\n--- Pre-poll check {} UTC | lead={:.1}s | upcoming: {} ---",
+            now.format("%H:%M:%S"),
+            lead,
+            if due_labels.is_empty() {
+                "none".to_string()
+            } else {
+                due_labels.join(", ")
+            },
+        );
+
+        for (i, boundary) in covered {
+            let strategy_id = self.slots[i].strategy_id.clone();
+            match self.slots[i].generator.prepare_poll(boundary) {
+                Ok(()) => eprintln!(
+                    "  [{}] prep hook OK for boundary {} UTC",
+                    strategy_id,
+                    boundary.format("%H:%M:%S"),
+                ),
+                Err(e) => eprintln!(
+                    "  WARN [{}] prep for boundary {} UTC failed: {}; poll will verify again",
+                    strategy_id,
+                    boundary.format("%H:%M:%S"),
+                    e.message(),
+                ),
             }
         }
 
@@ -482,8 +597,7 @@ impl LiveEngine {
             Ok(bal) => {
                 self.pre_poll_balance = Some(bal);
                 eprintln!(
-                    "Pre-poll {} | balance={:.2} USDT | open={}/{}",
-                    now.format("%H:%M:%S"),
+                    "  balance={:.2} USDT | open={}/{}",
                     bal,
                     self.tracker.open_count(),
                     self.config.max_concurrent_positions,
@@ -499,6 +613,18 @@ impl LiveEngine {
     // -- Signal poll --------------------------------------------------------
 
     fn do_signal_poll(&mut self, now: DateTime<Utc>, due: &[usize]) -> Result<()> {
+        for &i in due {
+            if let Ok(boundary) = floor_boundary(now, &self.slots[i].poll_interval) {
+                if self.slots[i].last_pre_poll_boundary != Some(boundary) {
+                    eprintln!(
+                        "WARN [{}] signal poll reached {} UTC without recorded pre-poll for that boundary",
+                        self.slots[i].strategy_id,
+                        boundary.format("%H:%M:%S"),
+                    );
+                }
+            }
+        }
+
         // Reconcile if not freshly reconciled in pre-poll.
         let needs_reconcile = self
             .last_reconcile
@@ -512,10 +638,10 @@ impl LiveEngine {
         // Capture balance once. Use cached pre-poll value when available;
         // otherwise fetch. On fetch failure, mark boundaries (so we don't
         // retry next tick) and skip the poll.
-        let balance = match self.pre_poll_balance {
-            Some(b) => b,
+        let (balance, balance_source) = match self.pre_poll_balance.take() {
+            Some(b) => (b, "pre-poll cache"),
             None => match self.client.get_available_balance() {
-                Ok(b) => b,
+                Ok(b) => (b, "fresh fetch"),
                 Err(e) => {
                     eprintln!("Signal poll: balance fetch failed: {e}; skipping");
                     self.mark_signal_poll_boundaries(now, due);
@@ -523,6 +649,17 @@ impl LiveEngine {
                 }
             },
         };
+        let due_labels: Vec<String> = due
+            .iter()
+            .map(|&i| self.slots[i].strategy_id.clone())
+            .collect();
+        eprintln!(
+            "\n--- Signal poll {} UTC | slots due: {} | balance={:.2} USDT ({}) ---",
+            now.format("%H:%M:%S"),
+            due_labels.join(", "),
+            balance,
+            balance_source,
+        );
 
         // Drive each due generator: set_poll_time first (all slots see the
         // same now), then poll. Per-variant handling:
@@ -535,7 +672,14 @@ impl LiveEngine {
             let slot = &mut self.slots[i];
             slot.generator.set_poll_time(now);
             match slot.generator.poll() {
-                Ok(sigs) => all_signals.push((i, sigs)),
+                Ok(sigs) => {
+                    eprintln!(
+                        "  [{}] poll returned {} signal(s)",
+                        slot.strategy_id,
+                        sigs.len(),
+                    );
+                    all_signals.push((i, sigs));
+                }
                 Err(crate::signal_generator::SignalError::Fatal(msg)) => {
                     return Err(LiveError::Fatal(msg));
                 }
@@ -551,6 +695,11 @@ impl LiveEngine {
         // Boundaries marked here so a transient error in execute_slot_signals
         // doesn't cause another poll within the same boundary window.
         self.mark_signal_poll_boundaries(now, due);
+
+        let total_signals: usize = all_signals.iter().map(|(_, sigs)| sigs.len()).sum();
+        if total_signals == 0 {
+            eprintln!("No signals this poll.");
+        }
 
         // Capital allocation cascade.
         self.execute_slot_signals(due, all_signals, balance);
@@ -715,13 +864,27 @@ mod tests {
         }
     }
 
-    /// Minimal FuturesApi — server_now is the only method exercised by these
-    /// scheduling tests. Other methods would unreachable!() so a logic bug
-    /// that called them surfaces loudly.
-    struct ClockApi(DateTime<Utc>);
+    /// Minimal FuturesApi — most scheduling tests only exercise server_now.
+    /// Other methods are unreachable!() so a logic bug that called them
+    /// surfaces loudly; position_info is configurable for active-position
+    /// sleep tests.
+    struct ClockApi {
+        now: DateTime<Utc>,
+        positions: Vec<serde_json::Value>,
+    }
+
+    impl ClockApi {
+        fn new(now: DateTime<Utc>) -> Self {
+            Self {
+                now,
+                positions: Vec::new(),
+            }
+        }
+    }
+
     impl FuturesApi for ClockApi {
         fn server_now(&self) -> DateTime<Utc> {
-            self.0
+            self.now
         }
         fn place_market_order(
             &self,
@@ -766,21 +929,13 @@ mod tests {
         ) -> Result<claude_trader_models::ExchangeOrder> {
             unreachable!()
         }
-        fn cancel_order(
-            &self,
-            _: &str,
-            _: i64,
-        ) -> Result<claude_trader_models::ExchangeOrder> {
+        fn cancel_order(&self, _: &str, _: i64) -> Result<claude_trader_models::ExchangeOrder> {
             unreachable!()
         }
         fn cancel_algo_order(&self, _: i64) -> Result<()> {
             unreachable!()
         }
-        fn get_order(
-            &self,
-            _: &str,
-            _: i64,
-        ) -> Result<claude_trader_models::ExchangeOrder> {
+        fn get_order(&self, _: &str, _: i64) -> Result<claude_trader_models::ExchangeOrder> {
             unreachable!()
         }
         fn get_order_by_client_id(
@@ -805,11 +960,8 @@ mod tests {
         ) -> Result<Vec<claude_trader_models::ExchangeOrder>> {
             unreachable!()
         }
-        fn get_position_info(
-            &self,
-            _: Option<&str>,
-        ) -> Result<Vec<serde_json::Value>> {
-            Ok(vec![])
+        fn get_position_info(&self, _: Option<&str>) -> Result<Vec<serde_json::Value>> {
+            Ok(self.positions.clone())
         }
         fn get_account_trades(
             &self,
@@ -879,7 +1031,7 @@ mod tests {
             .collect();
         let mut e = LiveEngine::new(
             cfg(),
-            Arc::new(ClockApi(Utc::now())),
+            Arc::new(ClockApi::new(Utc::now())),
             Arc::new(crate::market_client::NullMarketClient),
             with_budgets,
         )
@@ -892,7 +1044,7 @@ mod tests {
     fn new_rejects_duplicate_strategy_ids() {
         let result = LiveEngine::new(
             cfg(),
-            Arc::new(ClockApi(Utc::now())),
+            Arc::new(ClockApi::new(Utc::now())),
             Arc::new(crate::market_client::NullMarketClient),
             vec![
                 (dummy("alpha", &["BTCUSDT"]), GeneratorBudget::default()),
@@ -910,11 +1062,17 @@ mod tests {
     fn new_rejects_overlapping_symbols() {
         let result = LiveEngine::new(
             cfg(),
-            Arc::new(ClockApi(Utc::now())),
+            Arc::new(ClockApi::new(Utc::now())),
             Arc::new(crate::market_client::NullMarketClient),
             vec![
-                (dummy("alpha", &["BTCUSDT", "ETHUSDT"]), GeneratorBudget::default()),
-                (dummy("beta", &["ETHUSDT", "SOLUSDT"]), GeneratorBudget::default()),
+                (
+                    dummy("alpha", &["BTCUSDT", "ETHUSDT"]),
+                    GeneratorBudget::default(),
+                ),
+                (
+                    dummy("beta", &["ETHUSDT", "SOLUSDT"]),
+                    GeneratorBudget::default(),
+                ),
             ],
         );
         match result {
@@ -935,7 +1093,7 @@ mod tests {
         config.max_concurrent_positions = 5;
         let e = LiveEngine::new_single(
             config,
-            Arc::new(ClockApi(Utc::now())),
+            Arc::new(ClockApi::new(Utc::now())),
             Arc::new(crate::market_client::NullMarketClient),
             dummy("alpha", &["BTCUSDT"]),
         )
@@ -950,7 +1108,7 @@ mod tests {
     fn new_rejects_empty_generator_list() {
         let result = LiveEngine::new(
             cfg(),
-            Arc::new(ClockApi(Utc::now())),
+            Arc::new(ClockApi::new(Utc::now())),
             Arc::new(crate::market_client::NullMarketClient),
             vec![],
         );
@@ -982,12 +1140,14 @@ mod tests {
         let mut e = engine(vec![dummy("alpha", &["BTCUSDT"])]);
         // 0.5 s past the top of the hour → due.
         let now_just_after = ts("2026-04-30T13:00:00.5Z").with_timezone(&Utc);
-        let now_just_after = Utc.timestamp_millis_opt(now_just_after.timestamp_millis()).single().unwrap();
+        let now_just_after = Utc
+            .timestamp_millis_opt(now_just_after.timestamp_millis())
+            .single()
+            .unwrap();
         let due = e.due_slot_indices(now_just_after, 5.0);
         assert_eq!(due, vec![0]);
         // Mark as fired and re-check — same boundary should not be due.
-        e.slots[0].last_signal_poll_boundary =
-            Some(floor_boundary(now_just_after, "1h").unwrap());
+        e.slots[0].last_signal_poll_boundary = Some(floor_boundary(now_just_after, "1h").unwrap());
         let due = e.due_slot_indices(now_just_after, 5.0);
         assert!(due.is_empty());
     }
@@ -1024,6 +1184,36 @@ mod tests {
         let sleep = e.sleep_interval(now, 5.0);
         // min(check_interval=5, seconds_until_boundary=60) = 5
         assert!((sleep - 5.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn sleep_interval_with_active_positions_stops_at_pre_poll_window() {
+        let now = ts("2026-04-30T12:59:37Z");
+        let mut e = engine(vec![dummy("alpha", &["BTCUSDT"])]);
+        let state_path = std::env::temp_dir().join(format!(
+            "live_engine_active_sleep_{}_{}.json",
+            std::process::id(),
+            now.timestamp()
+        ));
+        let fixture: serde_json::Value =
+            serde_json::from_str(include_str!("../../../fixtures/live/position_state.json"))
+                .unwrap();
+        std::fs::write(
+            &state_path,
+            serde_json::to_string(fixture.get("positions").unwrap()).unwrap(),
+        )
+        .unwrap();
+        e.set_state_path(state_path.clone());
+        e.tracker.load_state();
+        assert!(e.has_local_active_positions());
+
+        let sleep = e.sleep_interval(now, 5.0);
+        // 23s to the boundary, 10s pre-poll lead, open-only fill check is 30s:
+        // the sleep must stop at the lead-window start, not at HH:00:00.
+        assert!((sleep - 13.0).abs() < 1.0, "sleep={sleep}");
+        let wake = now + chrono::Duration::milliseconds((sleep * 1000.0) as i64);
+        assert!(e.should_pre_poll(wake, 5.0));
+        let _ = std::fs::remove_file(state_path);
     }
 
     #[test]

@@ -5,13 +5,17 @@
 //! `ContextMap` and `HtfData`. This crate wraps that batch entry point in a
 //! `LiveSignalGenerator` that:
 //!
-//!   1. Fetches fresh 1h candles for every declared symbol on each poll,
-//!   2. Fetches fresh 4h candles + computes the strategy's 4h indicator set,
-//!   3. Fetches BTC daily candles and runs `DailyStructureProvider` to
-//!      derive `BtcStructure` market bias,
-//!   4. Calls `generate_signals` with `start = latest_closed_bar.close_time`
+//!   1. Warms 1h candles for every declared symbol,
+//!   2. Warms 4h candles + computes the strategy's 4h indicator set,
+//!   3. Warms BTC daily candles and runs `DailyStructureProvider` to derive
+//!      `BtcStructure` market bias,
+//!   4. Warms those inputs once, then keeps them hot with incremental
+//!      boundary refreshes: the normal hourly poll fetches only the newly
+//!      closed 1h bar per symbol; 4h/funding/BTC are skipped until they can
+//!      have changed,
+//!   5. Calls `generate_signals` with `start = latest_closed_bar.close_time`
 //!      and `end = start + 1ms` so only the freshest closed bar can emit,
-//!   5. Validates each signal and dedupes by `(ticker, signal_date)` so a
+//!   6. Validates each signal and dedupes by `(ticker, signal_date)` so a
 //!      retry within the same hour cannot place the same trade twice.
 //!
 //! Funding-rate context is fetched per declared symbol via
@@ -25,17 +29,19 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
+use std::thread;
+use std::time::Instant;
 
 use std::path::PathBuf;
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use claude_trader_btc_structure::{engine::FeatureValue, DailyStructureProvider};
 use claude_trader_indicators::{compute_indicators, required_warmup, OhlcvFrame};
 use claude_trader_live::market_client::LiveMarketClient;
 use claude_trader_live::signal_generator::{LiveSignalGenerator, SignalError};
 use claude_trader_models::{
-    Candle, ContextKey, ContextMap, ContextValue, FundingRate, HtfData, MarketBias, SeriesInput,
-    Signal,
+    floor_boundary, Candle, ContextKey, ContextMap, ContextValue, FundingRate, HtfData, MarketBias,
+    SeriesInput, Signal,
 };
 use claude_trader_research_runtime::ResearchStrategy;
 use ct_research_opus46_max_16apr26_1::Opus46Max16apr261;
@@ -116,7 +122,10 @@ const EXTRA_1H_BARS: i64 = 120;
 /// Extra 4h bars beyond `required_warmup(INDICATOR_COLUMNS_4H)`. Mirrors the
 /// research strategy's `extra_warmup_bars_per_interval()["4h"] = 80`.
 const EXTRA_4H_BARS: i64 = 80;
-const BTC_DAILY_LOOKBACK_DAYS: i64 = 200;
+/// BTCUSDT perpetual listing date on Binance. Live computes BTC structure
+/// from full available futures history so the path-dependent structure state
+/// is not seeded from a short rolling window.
+const BTC_LISTING_START_YMD: (i32, u32, u32) = (2019, 9, 8);
 /// Lookback for funding-rate fetch. Funding posts every 8h on Binance USD-M
 /// futures, and `funding_context_at` references a 30-day window to compute
 /// z-score. opus46 only reads `f.rate` (not the windowed metrics), so 30
@@ -130,8 +139,19 @@ pub struct Opus46Live {
     strategy: Opus46Max16apr261,
     market_client: Option<Arc<dyn LiveMarketClient>>,
     poll_time: DateTime<Utc>,
+    candles_1h: HashMap<String, Vec<Candle>>,
+    candles_4h: HashMap<String, Vec<Candle>>,
+    btc_events: Vec<(DateTime<Utc>, ContextValue)>,
+    funding: HashMap<String, Vec<FundingRate>>,
+    last_refresh: Option<DateTime<Utc>>,
     cooldown: CooldownStore,
     cooldown_path: PathBuf,
+}
+
+struct RefreshOutcome {
+    fetched: usize,
+    rows: usize,
+    failures: Vec<String>,
 }
 
 impl Opus46Live {
@@ -142,6 +162,11 @@ impl Opus46Live {
             strategy: Opus46Max16apr261,
             market_client: None,
             poll_time: DateTime::<Utc>::MIN_UTC,
+            candles_1h: HashMap::new(),
+            candles_4h: HashMap::new(),
+            btc_events: Vec::new(),
+            funding: HashMap::new(),
+            last_refresh: None,
             cooldown: CooldownStore::load(&path),
             cooldown_path: path,
         }
@@ -171,7 +196,7 @@ impl Opus46Live {
         client: &Arc<dyn LiveMarketClient>,
         now: DateTime<Utc>,
     ) -> Result<Vec<(DateTime<Utc>, ContextValue)>, SignalError> {
-        let start = now - Duration::days(BTC_DAILY_LOOKBACK_DAYS);
+        let start = btc_listing_start();
         let mut candles: Vec<Candle> = Vec::new();
         match client.fetch_klines("BTCUSDT", "1d", start, now) {
             Ok(c) if !c.is_empty() => candles = c,
@@ -194,6 +219,12 @@ impl Opus46Live {
             return Err(SignalError::recoverable(
                 "opus46: BTC structure required-context unavailable: \
                  both 1d and 1h synthesis fallback returned no candles",
+            ));
+        }
+        candles.retain(|c| c.close_time <= now);
+        if candles.is_empty() {
+            return Err(SignalError::recoverable(
+                "opus46: BTC structure has no closed daily candles at poll time",
             ));
         }
 
@@ -226,93 +257,380 @@ impl Opus46Live {
         Ok(events)
     }
 
-    /// Fetch funding rates for every declared symbol over the lookback
-    /// window. Required-context: opus46's `required_context()` includes
-    /// `Funding(sym)` for every traded symbol, and the research runtime
-    /// would refuse to start without it. If any symbol returns sparse
-    /// (<3 rates) or fails, return Recoverable so the engine skips this
-    /// poll instead of trading with mismatched sizing.
-    fn try_fetch_funding(
-        &self,
-        client: &Arc<dyn LiveMarketClient>,
+    fn warmup_1h_bars() -> i64 {
+        required_warmup(INDICATOR_COLUMNS_1H) as i64 + EXTRA_1H_BARS
+    }
+
+    fn warmup_4h_bars() -> i64 {
+        required_warmup(INDICATOR_COLUMNS_4H) as i64 + EXTRA_4H_BARS
+    }
+
+    fn min_closed_for_interval(interval: &str) -> usize {
+        if interval == "1h" {
+            Self::warmup_1h_bars() as usize
+        } else {
+            Self::warmup_4h_bars() as usize
+        }
+    }
+
+    fn merge_candles(dst: &mut Vec<Candle>, incoming: Vec<Candle>, max_len: usize) {
+        let mut by_open: BTreeMap<DateTime<Utc>, Candle> = BTreeMap::new();
+        for c in dst.drain(..).chain(incoming) {
+            by_open.insert(c.open_time, c);
+        }
+        *dst = by_open.into_values().collect();
+        if dst.len() > max_len {
+            let drop = dst.len() - max_len;
+            dst.drain(0..drop);
+        }
+    }
+
+    fn merge_funding(dst: &mut Vec<FundingRate>, incoming: Vec<FundingRate>, now: DateTime<Utc>) {
+        let mut by_ts: BTreeMap<DateTime<Utc>, FundingRate> = BTreeMap::new();
+        for r in dst.drain(..).chain(incoming) {
+            by_ts.insert(r.timestamp, r);
+        }
+        *dst = by_ts.into_values().collect();
+        let cutoff = now - Duration::days(FUNDING_LOOKBACK_DAYS + 2);
+        let keep_from = dst.partition_point(|r| r.timestamp < cutoff);
+        if keep_from > 0 {
+            dst.drain(0..keep_from);
+        }
+    }
+
+    fn closed_count(candles: &[Candle], now: DateTime<Utc>) -> usize {
+        candles.iter().filter(|c| c.close_time <= now).count()
+    }
+
+    fn interval_unit_hours(interval: &str) -> i64 {
+        match interval {
+            "4h" => 4,
+            _ => 1,
+        }
+    }
+
+    fn indicator_at(indicators: &HashMap<String, Vec<f64>>, col: &str, idx: usize) -> Option<f64> {
+        indicators
+            .get(col)
+            .and_then(|v| v.get(idx).copied())
+            .filter(|v| !v.is_nan())
+    }
+
+    fn validate_indicator_warmup(
+        symbol: &str,
+        interval: &str,
+        candles: &[Candle],
+        columns: &[&str],
+        min_closed: usize,
         now: DateTime<Utc>,
-    ) -> Result<HashMap<String, Vec<FundingRate>>, SignalError> {
-        let start = now - Duration::days(FUNDING_LOOKBACK_DAYS);
-        let mut out: HashMap<String, Vec<FundingRate>> = HashMap::new();
-        let mut missing: Vec<String> = Vec::new();
-        for sym in &self.symbols {
-            match client.fetch_funding_rates(sym, start, now) {
-                // funding_context_at requires ≥3 rates; below that the
-                // FundingContext lookup can't produce a meaningful result.
-                Ok(rates) if rates.len() >= 3 => {
-                    out.insert(sym.clone(), rates);
-                }
-                Ok(rates) => {
-                    log::warn!(
-                        "opus46: {sym} funding has {} rates (<3 required)",
-                        rates.len()
-                    );
-                    missing.push(sym.clone());
-                }
-                Err(e) => {
-                    log::warn!("opus46: {sym} funding fetch failed: {}", e);
-                    missing.push(sym.clone());
+    ) -> Result<usize, String> {
+        let last_closed_idx = candles
+            .iter()
+            .rposition(|c| c.close_time <= now)
+            .ok_or_else(|| format!("{symbol} {interval}: no closed candles at {now}"))?;
+        let closed = last_closed_idx + 1;
+        if closed < min_closed {
+            return Err(format!(
+                "{symbol} {interval}: only {closed} closed candles, need {min_closed}"
+            ));
+        }
+        let unit_hours = Self::interval_unit_hours(interval);
+        let latest_expected_open = floor_boundary(now, interval)
+            .map(|b| b - Duration::hours(unit_hours))
+            .map_err(|e| format!("{symbol} {interval}: invalid interval: {e}"))?;
+        if !candles
+            .iter()
+            .any(|c| c.open_time == latest_expected_open && c.close_time <= now)
+        {
+            return Err(format!(
+                "{symbol} {interval}: missing latest expected closed candle open={} at {}",
+                latest_expected_open.format("%Y-%m-%d %H:%M:%S"),
+                now.format("%Y-%m-%d %H:%M:%S"),
+            ));
+        }
+        let ohlcv = OhlcvFrame {
+            open: candles.iter().map(|c| c.open).collect(),
+            high: candles.iter().map(|c| c.high).collect(),
+            low: candles.iter().map(|c| c.low).collect(),
+            close: candles.iter().map(|c| c.close).collect(),
+            volume: candles.iter().map(|c| c.volume).collect(),
+            taker_buy_volume: candles.iter().map(|c| c.taker_buy_volume).collect(),
+        };
+        let indicators = compute_indicators(&ohlcv, columns)
+            .map_err(|e| format!("{symbol} {interval}: indicator compute failed: {e}"))?;
+        if Self::indicator_at(&indicators, "mom_slope", last_closed_idx).is_none()
+            || Self::indicator_at(&indicators, "atr_ratio", last_closed_idx).is_none()
+        {
+            return Err(format!(
+                "{symbol} {interval}: warmup indicators incomplete after {closed} closed candles"
+            ));
+        }
+        Ok(closed)
+    }
+
+    fn interval_fetch_start(
+        candles: Option<&Vec<Candle>>,
+        interval: &str,
+        unit_hours: i64,
+        bars: i64,
+        min_closed: usize,
+        now: DateTime<Utc>,
+        last_refresh: Option<DateTime<Utc>>,
+    ) -> Option<DateTime<Utc>> {
+        let full_start = now - Duration::hours(unit_hours * (bars + 2));
+        let Some(candles) = candles else {
+            return Some(full_start);
+        };
+        if Self::closed_count(candles, now) < min_closed {
+            return Some(full_start);
+        }
+        let latest_expected_open = floor_boundary(now, interval)
+            .map(|b| b - Duration::hours(unit_hours))
+            .unwrap_or_else(|_| {
+                candles
+                    .iter()
+                    .rev()
+                    .find(|c| c.close_time <= now)
+                    .map(|c| c.open_time)
+                    .unwrap_or(full_start)
+            });
+
+        let latest_closed = candles
+            .iter()
+            .rev()
+            .find(|c| c.close_time <= now && c.open_time == latest_expected_open);
+        if latest_closed.is_none() {
+            return Some(latest_expected_open);
+        }
+
+        let Some(last_refresh) = last_refresh else {
+            return Some(full_start);
+        };
+        let interval_ms = Duration::hours(unit_hours).num_milliseconds();
+        candles
+            .iter()
+            .find(|c| {
+                c.open_time >= latest_expected_open
+                    && c.close_time > last_refresh
+                    && c.close_time <= now
+                    && (c.close_time - c.open_time).num_milliseconds() <= interval_ms
+            })
+            .map(|c| c.open_time)
+    }
+
+    fn refresh_interval_cache(
+        client: &Arc<dyn LiveMarketClient>,
+        symbols: &[String],
+        cache: &mut HashMap<String, Vec<Candle>>,
+        interval: &str,
+        unit_hours: i64,
+        bars: i64,
+        now: DateTime<Utc>,
+        last_refresh: Option<DateTime<Utc>>,
+    ) -> RefreshOutcome {
+        let min_closed = Self::min_closed_for_interval(interval);
+        let max_len = (bars + 12).max(bars) as usize;
+        let mut plan: Vec<(String, DateTime<Utc>)> = Vec::new();
+        for sym in symbols {
+            let Some(fetch_start) = Self::interval_fetch_start(
+                cache.get(sym),
+                interval,
+                unit_hours,
+                bars,
+                min_closed,
+                now,
+                last_refresh,
+            ) else {
+                continue;
+            };
+            plan.push((sym.clone(), fetch_start));
+        }
+
+        let fetched = plan.len();
+        let mut failures: Vec<String> = Vec::new();
+        let mut fetched_rows: Vec<(String, Vec<Candle>)> = Vec::new();
+        thread::scope(|scope| {
+            let mut handles = Vec::with_capacity(plan.len());
+            for (sym, fetch_start) in plan {
+                let client = client.clone();
+                let interval = interval.to_string();
+                handles.push(scope.spawn(move || {
+                    let result = client.fetch_klines(&sym, &interval, fetch_start, now);
+                    (sym, interval, result)
+                }));
+            }
+            for handle in handles {
+                let (sym, interval, result) = handle.join().expect("kline fetch thread panicked");
+                match result {
+                    Ok(rows) if !rows.is_empty() => fetched_rows.push((sym, rows)),
+                    Ok(_) => failures.push(format!("{sym} {interval}: fetch returned 0 candles")),
+                    Err(e) => failures.push(format!("{sym} {interval}: fetch failed: {e}")),
                 }
             }
+        });
+        let rows = fetched_rows.iter().map(|(_, rows)| rows.len()).sum();
+        for (sym, rows) in fetched_rows {
+            let entry = cache.entry(sym).or_default();
+            Self::merge_candles(entry, rows, max_len);
         }
+        RefreshOutcome {
+            fetched,
+            rows,
+            failures,
+        }
+    }
+
+    fn refresh_funding_cache(
+        &mut self,
+        client: &Arc<dyn LiveMarketClient>,
+        now: DateTime<Utc>,
+    ) -> RefreshOutcome {
+        let mut plan: Vec<(String, DateTime<Utc>)> = Vec::new();
+        for sym in &self.symbols {
+            match self.funding.get(sym).and_then(|rates| rates.last()) {
+                Some(last) if self.funding.get(sym).map_or(0, Vec::len) >= 3 => {
+                    // Binance USD-M funding posts every 8h. Between funding
+                    // timestamps, the existing cached value is exactly the
+                    // value context_at() should see.
+                    if now - last.timestamp < Duration::hours(8) {
+                        continue;
+                    }
+                    plan.push((sym.clone(), last.timestamp + Duration::milliseconds(1)));
+                }
+                _ => plan.push((sym.clone(), now - Duration::days(FUNDING_LOOKBACK_DAYS))),
+            }
+        }
+
+        let fetched = plan.len();
+        let mut failures: Vec<String> = Vec::new();
+        let mut fetched_rows: Vec<(String, Vec<FundingRate>)> = Vec::new();
+        thread::scope(|scope| {
+            let mut handles = Vec::with_capacity(plan.len());
+            for (sym, start) in plan {
+                let client = client.clone();
+                handles.push(scope.spawn(move || {
+                    let result = client.fetch_funding_rates(&sym, start, now);
+                    (sym, result)
+                }));
+            }
+            for handle in handles {
+                let (sym, result) = handle.join().expect("funding fetch thread panicked");
+                match result {
+                    Ok(rows) => fetched_rows.push((sym, rows)),
+                    Err(e) => failures.push(format!("{sym} funding fetch failed: {e}")),
+                }
+            }
+        });
+        let rows = fetched_rows.iter().map(|(_, rows)| rows.len()).sum();
+        for (sym, rows) in fetched_rows {
+            if !rows.is_empty() {
+                let entry = self.funding.entry(sym).or_default();
+                Self::merge_funding(entry, rows, now);
+            }
+        }
+
+        let missing: Vec<String> = self
+            .symbols
+            .iter()
+            .filter(|sym| self.funding.get(*sym).map_or(0, Vec::len) < 3)
+            .cloned()
+            .collect();
         if !missing.is_empty() {
             let preview: Vec<String> = missing.iter().take(3).cloned().collect();
-            return Err(SignalError::recoverable(format!(
+            failures.push(format!(
                 "opus46: required funding context missing for {}/{} symbols (e.g. {})",
                 missing.len(),
                 self.symbols.len(),
                 preview.join(","),
-            )));
+            ));
         }
-        Ok(out)
+        RefreshOutcome {
+            fetched,
+            rows,
+            failures,
+        }
     }
 
-    fn fetch_with_warmup(
+    fn refresh_btc_events_if_needed(
+        &mut self,
         client: &Arc<dyn LiveMarketClient>,
-        symbol: &str,
-        interval: &str,
-        bars: i64,
-        unit_hours: i64,
         now: DateTime<Utc>,
-    ) -> Result<Vec<Candle>, SignalError> {
-        let start = now - Duration::hours(bars * unit_hours);
-        client
-            .fetch_klines(symbol, interval, start, now)
-            .map_err(|e| SignalError::recoverable(format!("{symbol} {interval} fetch failed: {e}")))
+    ) -> Result<bool, SignalError> {
+        if let Some((latest_visible, _)) = self.btc_events.iter().rev().find(|(ts, _)| *ts <= now) {
+            if now <= *latest_visible + Duration::days(1) {
+                return Ok(false);
+            }
+        }
+        self.btc_events = Self::try_build_btc_events(client, now)?;
+        Ok(true)
     }
 
-    fn build_htf_4h(&self, client: &Arc<dyn LiveMarketClient>, now: DateTime<Utc>) -> HtfData {
-        let warmup = required_warmup(INDICATOR_COLUMNS_4H) as i64;
-        let bars = warmup + EXTRA_4H_BARS;
+    fn validate_1h_cache(&self, now: DateTime<Utc>) -> Vec<String> {
+        let min_closed = Self::warmup_1h_bars() as usize;
+        let mut failures = Vec::new();
+        for sym in &self.symbols {
+            match self.candles_1h.get(sym) {
+                Some(cs) => {
+                    if let Err(e) = Self::validate_indicator_warmup(
+                        sym,
+                        "1h",
+                        cs,
+                        INDICATOR_COLUMNS_1H,
+                        min_closed,
+                        now,
+                    ) {
+                        failures.push(e);
+                    }
+                }
+                None => failures.push(format!("{sym} 1h: no warmup cache")),
+            }
+        }
+        failures
+    }
+
+    fn validate_4h_cache(&self, now: DateTime<Utc>) -> Vec<String> {
+        let min_closed = Self::warmup_4h_bars() as usize;
+        let mut failures = Vec::new();
+        for sym in &self.symbols {
+            match self.candles_4h.get(sym) {
+                Some(cs) => {
+                    if let Err(e) = Self::validate_indicator_warmup(
+                        sym,
+                        "4h",
+                        cs,
+                        INDICATOR_COLUMNS_4H,
+                        min_closed,
+                        now,
+                    ) {
+                        failures.push(e);
+                    }
+                }
+                None => failures.push(format!("{sym} 4h: no warmup cache")),
+            }
+        }
+        failures
+    }
+
+    fn build_htf_4h_from_cache(&self, end: DateTime<Utc>) -> HtfData {
         let mut candles_4h: HashMap<String, Vec<Candle>> = HashMap::new();
         let mut indicators_4h: HashMap<String, HashMap<String, Vec<f64>>> = HashMap::new();
-        for sym in &self.symbols {
-            let cs = match Self::fetch_with_warmup(client, sym, "4h", bars, 4, now) {
-                Ok(c) => c,
-                Err(e) => {
-                    log::warn!("opus46: {sym} 4h fetch failed: {}", e.message());
-                    continue;
-                }
-            };
-            if cs.is_empty() {
+        for (sym, cs) in &self.candles_4h {
+            let end_idx = cs.partition_point(|c| c.close_time < end);
+            let closed = &cs[..end_idx];
+            if closed.is_empty() {
                 continue;
             }
             let ohlcv = OhlcvFrame {
-                open: cs.iter().map(|c| c.open).collect(),
-                high: cs.iter().map(|c| c.high).collect(),
-                low: cs.iter().map(|c| c.low).collect(),
-                close: cs.iter().map(|c| c.close).collect(),
-                volume: cs.iter().map(|c| c.volume).collect(),
-                taker_buy_volume: cs.iter().map(|c| c.taker_buy_volume).collect(),
+                open: closed.iter().map(|c| c.open).collect(),
+                high: closed.iter().map(|c| c.high).collect(),
+                low: closed.iter().map(|c| c.low).collect(),
+                close: closed.iter().map(|c| c.close).collect(),
+                volume: closed.iter().map(|c| c.volume).collect(),
+                taker_buy_volume: closed.iter().map(|c| c.taker_buy_volume).collect(),
             };
             match compute_indicators(&ohlcv, INDICATOR_COLUMNS_4H) {
                 Ok(ind) => {
-                    candles_4h.insert(sym.clone(), cs);
+                    candles_4h.insert(sym.clone(), closed.to_vec());
                     indicators_4h.insert(sym.clone(), ind);
                 }
                 Err(e) => log::warn!("opus46: {sym} 4h indicators failed: {e}"),
@@ -324,12 +642,147 @@ impl Opus46Live {
             .insert("4h".to_string(), indicators_4h);
         htf
     }
+
+    fn refresh_market_state(&mut self, now: DateTime<Utc>) -> Result<(), SignalError> {
+        let client = self.client()?.clone();
+        let t = Instant::now();
+
+        // Eagerly attempt every source before returning an error. That keeps
+        // the operator log complete for the poll, but unchanged daily/funding/
+        // 4h sources are skipped so the boundary path only fetches what can
+        // have changed.
+        let btc_t = Instant::now();
+        let btc_refreshed = self.refresh_btc_events_if_needed(&client, now);
+        let btc_ms = btc_t.elapsed().as_secs_f64() * 1000.0;
+
+        let funding_t = Instant::now();
+        let funding_outcome = self.refresh_funding_cache(&client, now);
+        let funding_ms = funding_t.elapsed().as_secs_f64() * 1000.0;
+
+        let oneh_t = Instant::now();
+        let oneh_failures = Self::refresh_interval_cache(
+            &client,
+            &self.symbols,
+            &mut self.candles_1h,
+            "1h",
+            1,
+            Self::warmup_1h_bars(),
+            now,
+            self.last_refresh,
+        );
+        let oneh_ms = oneh_t.elapsed().as_secs_f64() * 1000.0;
+
+        let fourh_t = Instant::now();
+        let fourh_failures = Self::refresh_interval_cache(
+            &client,
+            &self.symbols,
+            &mut self.candles_4h,
+            "4h",
+            4,
+            Self::warmup_4h_bars(),
+            now,
+            self.last_refresh,
+        );
+        let fourh_ms = fourh_t.elapsed().as_secs_f64() * 1000.0;
+
+        let validate_t = Instant::now();
+        let mut failures = Vec::new();
+        let btc_refreshed_ok = matches!(&btc_refreshed, Ok(true));
+        match btc_refreshed {
+            Ok(_) => {}
+            Err(e) => failures.push(e.message().to_string()),
+        }
+        failures.extend(funding_outcome.failures);
+        failures.extend(oneh_failures.failures);
+        failures.extend(fourh_failures.failures);
+        failures.extend(self.validate_1h_cache(now));
+        failures.extend(self.validate_4h_cache(now));
+        let validate_ms = validate_t.elapsed().as_secs_f64() * 1000.0;
+
+        if !failures.is_empty() {
+            let preview = failures
+                .iter()
+                .take(6)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("; ");
+            return Err(SignalError::recoverable(format!(
+                "opus46 market warmup incomplete for poll {} UTC: {} issue(s): {}",
+                now.format("%Y-%m-%d %H:%M:%S"),
+                failures.len(),
+                preview,
+            )));
+        }
+
+        self.last_refresh = Some(now);
+        let funding_rows: usize = self.funding.values().map(|v| v.len()).sum();
+        eprintln!(
+            "opus46 data ready at {} UTC | 1h={}/{} fetched={} rows={} 4h={}/{} fetched={} rows={} funding={} rows/{} syms fetched={} rows={} btc_events={} btc_refreshed={} timings_ms btc={:.0} funding={:.0} 1h={:.0} 4h={:.0} validate={:.0} total={:.0}",
+            now.format("%H:%M:%S"),
+            self.candles_1h.len(),
+            self.symbols.len(),
+            oneh_failures.fetched,
+            oneh_failures.rows,
+            self.candles_4h.len(),
+            self.symbols.len(),
+            fourh_failures.fetched,
+            fourh_failures.rows,
+            funding_rows,
+            self.funding.len(),
+            funding_outcome.fetched,
+            funding_outcome.rows,
+            self.btc_events.len(),
+            btc_refreshed_ok,
+            btc_ms,
+            funding_ms,
+            oneh_ms,
+            fourh_ms,
+            validate_ms,
+            t.elapsed().as_secs_f64() * 1000.0,
+        );
+        Ok(())
+    }
+
+    fn cache_status(&self, now: DateTime<Utc>) -> (usize, usize, usize, usize) {
+        let min_1h = Self::warmup_1h_bars() as usize;
+        let min_4h = Self::warmup_4h_bars() as usize;
+        let oneh_ready = self
+            .symbols
+            .iter()
+            .filter(|sym| {
+                self.candles_1h
+                    .get(*sym)
+                    .map(|cs| Self::closed_count(cs, now) >= min_1h)
+                    .unwrap_or(false)
+            })
+            .count();
+        let fourh_ready = self
+            .symbols
+            .iter()
+            .filter(|sym| {
+                self.candles_4h
+                    .get(*sym)
+                    .map(|cs| Self::closed_count(cs, now) >= min_4h)
+                    .unwrap_or(false)
+            })
+            .count();
+        let funding_ready = self.funding.len();
+        let btc_events = self.btc_events.len();
+        (oneh_ready, fourh_ready, funding_ready, btc_events)
+    }
 }
 
 impl Default for Opus46Live {
     fn default() -> Self {
         Self::new()
     }
+}
+
+fn btc_listing_start() -> DateTime<Utc> {
+    let (year, month, day) = BTC_LISTING_START_YMD;
+    Utc.with_ymd_and_hms(year, month, day, 0, 0, 0)
+        .single()
+        .expect("valid BTC listing start")
 }
 
 /// Synthesize 1d candles from a sorted slice of 1h candles by grouping on
@@ -387,24 +840,37 @@ impl LiveSignalGenerator for Opus46Live {
 
     fn setup(&mut self, client: Arc<dyn LiveMarketClient>) -> Result<(), SignalError> {
         let now = Utc::now();
-        // Smoke test: fetch BTC 1h to verify network + the symbol is tradable
-        // before declaring the strategy ready. A failure here is fatal —
-        // refusing to trade if we can't even reach the market data API.
-        let probe_start = now - Duration::hours(2);
-        let probe = client
-            .fetch_klines("BTCUSDT", "1h", probe_start, now)
-            .map_err(|e| {
-                SignalError::fatal(format!("opus46 setup probe BTCUSDT 1h failed: {e}"))
-            })?;
-        if probe.is_empty() {
-            return Err(SignalError::fatal("opus46 setup probe returned no candles"));
-        }
-        log::info!(
-            "opus46 setup OK: BTCUSDT probe returned {} candle(s); strategy_id={}",
-            probe.len(),
-            STRATEGY_ID
-        );
         self.market_client = Some(client);
+        eprintln!(
+            "opus46 setup warmup starting | symbols={} 1h_bars={} 4h_bars={} funding_lookback={}d btc_start={}",
+            self.symbols.len(),
+            Self::warmup_1h_bars(),
+            Self::warmup_4h_bars(),
+            FUNDING_LOOKBACK_DAYS,
+            btc_listing_start().format("%Y-%m-%d"),
+        );
+        self.refresh_market_state(now).map_err(|e| {
+            SignalError::fatal(format!("opus46 setup warmup failed: {}", e.message()))
+        })?;
+        for sym in &self.symbols {
+            let oneh = self
+                .candles_1h
+                .get(sym)
+                .map(|cs| Self::closed_count(cs, now))
+                .unwrap_or(0);
+            let fourh = self
+                .candles_4h
+                .get(sym)
+                .map(|cs| Self::closed_count(cs, now))
+                .unwrap_or(0);
+            eprintln!("  {sym}: warmed 1h={oneh} closed bars 4h={fourh} closed bars");
+        }
+        eprintln!(
+            "opus46 setup OK | strategy_id={} btc_events={} funding_symbols={}",
+            STRATEGY_ID,
+            self.btc_events.len(),
+            self.funding.len(),
+        );
         Ok(())
     }
 
@@ -412,55 +878,66 @@ impl LiveSignalGenerator for Opus46Live {
         self.poll_time = now;
     }
 
-    fn poll(&mut self) -> Result<Vec<Signal>, SignalError> {
-        let client = self.client()?.clone();
-        let now = self.poll_time;
-
-        // Phase 1 — eager fetch. Every required-context fetch issues now,
-        // even if an earlier one already failed. Validation runs after all
-        // fetches so transient errors don't mask each other and so
-        // observability tooling sees a complete picture per poll.
-        let btc_events_res = Self::try_build_btc_events(&client, now);
-        let funding_res = self.try_fetch_funding(&client, now);
-
-        let warmup_1h = required_warmup(INDICATOR_COLUMNS_1H) as i64;
-        let bars_1h = warmup_1h + EXTRA_1H_BARS;
-        let mut candles_1h: HashMap<String, Vec<Candle>> = HashMap::new();
-        for sym in &self.symbols {
-            match Self::fetch_with_warmup(&client, sym, "1h", bars_1h, 1, now) {
-                Ok(cs) if !cs.is_empty() => {
-                    candles_1h.insert(sym.clone(), cs);
-                }
-                Ok(_) => log::warn!("opus46: {sym} 1h fetch returned 0 candles"),
-                Err(e) => log::warn!("opus46: {sym} 1h fetch failed: {}", e.message()),
-            }
+    fn prepare_poll(&mut self, next_boundary: DateTime<Utc>) -> Result<(), SignalError> {
+        let status_time = self
+            .last_refresh
+            .unwrap_or(next_boundary - Duration::milliseconds(1));
+        let (oneh_ready, fourh_ready, funding_ready, btc_events) = self.cache_status(status_time);
+        let last_refresh = self
+            .last_refresh
+            .map(|t| t.format("%H:%M:%S").to_string())
+            .unwrap_or_else(|| "never".to_string());
+        eprintln!(
+            "opus46 prepoll cache | boundary={} UTC last_refresh={} 1h_history={}/{} 4h_history={}/{} funding={}/{} btc_events={} final_bar_refresh=signal_poll",
+            next_boundary.format("%H:%M:%S"),
+            last_refresh,
+            oneh_ready,
+            self.symbols.len(),
+            fourh_ready,
+            self.symbols.len(),
+            funding_ready,
+            self.symbols.len(),
+            btc_events,
+        );
+        if oneh_ready == self.symbols.len()
+            && fourh_ready == self.symbols.len()
+            && funding_ready == self.symbols.len()
+            && btc_events > 0
+        {
+            Ok(())
+        } else {
+            Err(SignalError::recoverable(
+                "opus46 prepoll cache is incomplete; signal poll will refresh and fail closed if still incomplete",
+            ))
         }
-        let htf = self.build_htf_4h(&client, now);
+    }
 
-        // Phase 2 — validate required-context. Both BTC structure and
-        // funding are declared in opus46's required_context(); a research
-        // run that couldn't fetch them would refuse to start. The live
-        // counterpart returns Recoverable so the engine logs and retries
-        // on the next 1h boundary.
-        let btc_events = btc_events_res?;
-        let funding = funding_res?;
-        if candles_1h.is_empty() {
+    fn poll(&mut self) -> Result<Vec<Signal>, SignalError> {
+        let now = self.poll_time;
+        self.refresh_market_state(now)?;
+
+        if self.candles_1h.is_empty() {
             return Err(SignalError::recoverable(
                 "opus46: no 1h candles for any symbol this poll",
             ));
         }
 
-        // Phase 3 — assemble ContextMap.
-        let mut entries: Vec<(ContextKey, SeriesInput)> = Vec::with_capacity(1 + funding.len());
-        entries.push((ContextKey::BtcStructure, SeriesInput::Point(btc_events)));
-        for (sym, rates) in funding {
+        // Phase 1 — assemble ContextMap from the warmed live caches.
+        let mut entries: Vec<(ContextKey, SeriesInput)> =
+            Vec::with_capacity(1 + self.funding.len());
+        entries.push((
+            ContextKey::BtcStructure,
+            SeriesInput::Point(self.btc_events.clone()),
+        ));
+        for (sym, rates) in self.funding.clone() {
             entries.push((ContextKey::Funding(sym), SeriesInput::FundingRaw(rates)));
         }
         let ctx = ContextMap::from_series(entries);
 
-        // Phase 4 — pick the latest fully-closed 1h bar across symbols and
+        // Phase 2 — pick the latest fully-closed 1h bar across symbols and
         // run the research strategy's generate_signals() against it.
-        let latest_close = match candles_1h
+        let latest_close = match self
+            .candles_1h
             .values()
             .filter_map(|cs| cs.iter().rev().find(|c| c.close_time <= now))
             .map(|c| c.close_time)
@@ -475,15 +952,51 @@ impl LiveSignalGenerator for Opus46Live {
         };
         let start = latest_close;
         let end = latest_close + Duration::milliseconds(1);
+        let missing_decision_bar: Vec<String> = self
+            .symbols
+            .iter()
+            .filter(|sym| {
+                !self
+                    .candles_1h
+                    .get(*sym)
+                    .map(|cs| cs.iter().any(|c| c.close_time == latest_close))
+                    .unwrap_or(false)
+            })
+            .cloned()
+            .collect();
+        if !missing_decision_bar.is_empty() {
+            return Err(SignalError::recoverable(format!(
+                "opus46: latest 1h decision bar {} UTC missing for {}/{} symbols (e.g. {})",
+                latest_close.format("%Y-%m-%d %H:%M:%S"),
+                missing_decision_bar.len(),
+                self.symbols.len(),
+                missing_decision_bar
+                    .iter()
+                    .take(3)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(","),
+            )));
+        }
+        let htf = self.build_htf_4h_from_cache(end);
 
         let mut tree: BTreeMap<String, &[Candle]> = BTreeMap::new();
-        for (sym, cs) in &candles_1h {
-            tree.insert(sym.clone(), cs.as_slice());
+        for (sym, cs) in &self.candles_1h {
+            let end_idx = cs.partition_point(|c| c.close_time < end);
+            tree.insert(sym.clone(), &cs[..end_idx]);
         }
         let active_params: HashMap<String, serde_json::Value> = HashMap::new();
+        let generation_t = Instant::now();
         let raw = self
             .strategy
             .generate_signals(&tree, start, end, &active_params, &ctx, &htf);
+        let generation_ms = generation_t.elapsed().as_secs_f64() * 1000.0;
+        eprintln!(
+            "opus46 generated {} raw signal(s) for closed bar {} UTC | generation_ms={:.0}",
+            raw.len(),
+            latest_close.format("%Y-%m-%d %H:%M:%S"),
+            generation_ms,
+        );
 
         self.commit_signals(raw)
     }
@@ -786,6 +1299,90 @@ mod tests {
             size_multiplier: 1.0,
             metadata: HashMap::new(),
         }
+    }
+
+    fn ts(rfc3339: &str) -> DateTime<Utc> {
+        DateTime::parse_from_rfc3339(rfc3339)
+            .unwrap()
+            .with_timezone(&Utc)
+    }
+
+    fn test_candle(open_time: DateTime<Utc>, close_time: DateTime<Utc>) -> Candle {
+        Candle {
+            open_time,
+            close_time,
+            open: 100.0,
+            high: 101.0,
+            low: 99.0,
+            close: 100.5,
+            volume: 1.0,
+            taker_buy_volume: 0.5,
+        }
+    }
+
+    #[test]
+    fn interval_fetch_start_fetches_missing_latest_closed_bar_only() {
+        let now = ts("2026-05-01T23:00:00Z");
+        let cached = vec![test_candle(
+            ts("2026-05-01T21:00:00Z"),
+            ts("2026-05-01T21:59:59.999Z"),
+        )];
+
+        let start = Opus46Live::interval_fetch_start(
+            Some(&cached),
+            "1h",
+            1,
+            200,
+            1,
+            now,
+            Some(ts("2026-05-01T22:00:05Z")),
+        )
+        .unwrap();
+
+        assert_eq!(start, ts("2026-05-01T22:00:00Z"));
+    }
+
+    #[test]
+    fn interval_fetch_start_refetches_cached_partial_after_it_closes() {
+        let now = ts("2026-05-01T22:00:00Z");
+        let cached = vec![test_candle(
+            ts("2026-05-01T21:00:00Z"),
+            ts("2026-05-01T21:59:59.999Z"),
+        )];
+
+        let start = Opus46Live::interval_fetch_start(
+            Some(&cached),
+            "1h",
+            1,
+            200,
+            1,
+            now,
+            Some(ts("2026-05-01T21:06:07Z")),
+        )
+        .unwrap();
+
+        assert_eq!(start, ts("2026-05-01T21:00:00Z"));
+    }
+
+    #[test]
+    fn interval_fetch_start_skips_unchanged_4h_cache() {
+        let now = ts("2026-05-01T23:00:00Z");
+        let cached = vec![test_candle(
+            ts("2026-05-01T16:00:00Z"),
+            ts("2026-05-01T19:59:59.999Z"),
+        )];
+
+        let start = Opus46Live::interval_fetch_start(
+            Some(&cached),
+            "4h",
+            4,
+            100,
+            1,
+            now,
+            Some(ts("2026-05-01T20:00:05Z")),
+        );
+
+        assert_eq!(start, None);
     }
 
     #[test]
